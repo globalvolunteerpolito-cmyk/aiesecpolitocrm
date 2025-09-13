@@ -278,12 +278,20 @@ const IconButton = ({ icon: Icon, onClick, className = '' }) => (
 );
 
 const Sidebar = () => {
-    const { setActiveTab } = useContext(UIContext);
+    const { setActiveTab, setIsNotificationsPanelOpen, setIsSettingsModalOpen } = useContext(UIContext);
     const { user, signOut } = useContext(AuthContext);
     const handleSignOut = async () => {
         const { error } = await signOut();
         if (error) console.error('Logout failed:', error);
     };
+
+    const navItems = [
+        { id: 'dashboard', name: 'Dashboard', icon: Home },
+        { id: 'participants', name: 'Participants', icon: Users },
+        { id: 'credits', name: 'Credits', icon: CreditCard },
+        { id: 'partners', name: 'Partners', icon: Handshake },
+    ];
+    
     return (
         <div className="w-64 bg-white border-r border-gray-200 p-6 flex flex-col justify-between rounded-tr-lg rounded-br-lg shadow-lg">
             <div>
@@ -292,39 +300,21 @@ const Sidebar = () => {
                     <span className="text-xl font-bold text-gray-800">AIESEC CRM</span>
                 </div>
                 <nav className="space-y-2">
-                    <button
-                        onClick={() => setActiveTab('dashboard')}
-                        className="w-full flex items-center space-x-3 p-3 rounded-lg text-gray-700 hover:bg-blue-100 hover:text-blue-600 transition-colors"
-                    >
-                        <Home className="w-5 h-5" />
-                        <span>Dashboard</span>
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('participants')}
-                        className="w-full flex items-center space-x-3 p-3 rounded-lg text-gray-700 hover:bg-blue-100 hover:text-blue-600 transition-colors"
-                    >
-                        <Users className="w-5 h-5" />
-                        <span>Participants</span>
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('credits')}
-                        className="w-full flex items-center space-x-3 p-3 rounded-lg text-gray-700 hover:bg-blue-100 hover:text-blue-600 transition-colors"
-                    >
-                        <CreditCard className="w-5 h-5" />
-                        <span>Credits</span>
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('partners')}
-                        className="w-full flex items-center space-x-3 p-3 rounded-lg text-gray-700 hover:bg-blue-100 hover:text-blue-600 transition-colors"
-                    >
-                        <Handshake className="w-5 h-5" />
-                        <span>Partners</span>
-                    </button>
+                    {navItems.map((item) => (
+                        <button
+                            key={item.id}
+                            onClick={() => setActiveTab(item.id)}
+                            className="w-full flex items-center space-x-3 p-3 rounded-lg text-gray-700 hover:bg-blue-100 hover:text-blue-600 transition-colors"
+                        >
+                            <item.icon className="w-5 h-5" />
+                            <span>{item.name}</span>
+                        </button>
+                    ))}
                 </nav>
             </div>
             <div className="space-y-2">
                 <button
-                    onClick={() => {}}
+                    onClick={() => setIsSettingsModalOpen(true)}
                     className="w-full flex items-center space-x-3 p-3 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors"
                 >
                     <Settings className="w-5 h-5" />
@@ -353,6 +343,7 @@ const Sidebar = () => {
 
 const Header = () => {
     const { setIsNotificationsPanelOpen, setIsSettingsModalOpen } = useContext(UIContext);
+    const { user } = useContext(AuthContext);
     return (
         <header className="bg-white border-b border-gray-200 p-4 flex items-center justify-between shadow-sm">
             <div className="flex-1">
@@ -368,7 +359,9 @@ const Header = () => {
             <div className="flex items-center space-x-2 ml-4">
                 <IconButton icon={Bell} onClick={() => setIsNotificationsPanelOpen(true)} />
                 <IconButton icon={Settings} onClick={() => setIsSettingsModalOpen(true)} />
-                <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-sm font-semibold">MR</div>
+                <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-sm font-semibold">
+                    {user?.email?.charAt(0).toUpperCase() || 'MR'}
+                </div>
             </div>
         </header>
     );
@@ -480,12 +473,46 @@ const CreditsContent = () => (
     </div>
 );
 
-const PartnersContent = () => (
-    <div className="p-8">
-        <h1 className="text-3xl font-bold text-gray-900">Partners</h1>
-        <p className="mt-2 text-gray-600">This is a mock partners page.</p>
-    </div>
-);
+const PartnersContent = () => {
+    const { partners, loading } = useContext(DataContext);
+    if (loading) return <p className="p-8">Loading partners...</p>;
+
+    return (
+        <div className="p-8">
+            <h1 className="text-3xl font-bold text-gray-900 mb-6">Partners</h1>
+            <div className="bg-white rounded-xl shadow-sm p-6">
+                <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50">
+                            <tr>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                            {partners.map(p => (
+                                <tr key={p.id}>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{p.name}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{p.contact_person}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{p.email}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{p.company_type}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                                        <button className="text-blue-600 hover:text-blue-900">
+                                            <Eye className="w-5 h-5" />
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    );
+};
 
 const AddEPModal = () => {
     const { isAddEPModalOpen, setIsAddEPModalOpen, showNotification } = useContext(UIContext);
