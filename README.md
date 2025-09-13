@@ -1,4 +1,0 @@
-# aiesecpolitocrm
-# aiesecpolitocrm
-# aiesecpolitocrm
-# aiesecpolitocrm
